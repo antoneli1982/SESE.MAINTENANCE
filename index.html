@@ -201,14 +201,18 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
       <p>Faça login para continuar</p>
     </div>
     <div class="login-body">
-      <div class="role-tabs" style="margin-bottom:20px">
+      <div class="role-tabs" style="margin-bottom:20px;grid-template-columns:1fr 1fr 1fr">
         <button class="role-tab on" id="rt-gest" onclick="selectRole('gestor')">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span class="role-label">Gestor</span>
         </button>
-        <button class="role-tab" id="rt-op" onclick="selectRole('operacional')">
+        <button class="role-tab" id="rt-op" onclick="selectRole('time')">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
-          <span class="role-label">Operacional</span>
+          <span class="role-label">Operacional Manut.</span>
+        </button>
+        <button class="role-tab" id="rt-livre" onclick="acessoLivre()" style="border:2px solid rgba(52,211,153,0.4);background:rgba(52,211,153,0.08)">
+          <svg fill="none" stroke="#34d399" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
+          <span class="role-label" style="color:#34d399">Abrir OS</span>
         </button>
       </div>
       <div id="login-err" class="login-error" style="display:none">
@@ -633,7 +637,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
       </div></div>
     </div>
 
-    <!-- ═══ PAINEL OPERACIONAL ═══ -->
+    <!-- ═══ PAINEL TIME DE MANUTENÇÃO ═══ -->
     <div id="sec-painel-op" class="sec">
       <div class="ph"><h1 id="op-boas-vindas">Olá, Operacional</h1><p>Suas ordens de serviço abertas</p></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px;margin-bottom:20px">
@@ -657,6 +661,94 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
           <tbody id="op-tbody"></tbody>
         </table></div>
         <div class="pag"><span id="op-pag">0 registros</span><div class="pag-bs"><button class="pb on">1</button></div></div>
+      </div>
+    </div>
+
+
+    <!-- ═══ ACESSO LIVRE — TIME DE MANUTENÇÃO ═══ -->
+    <div id="sec-livre" class="sec">
+      <div class="ph">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <h1>Portal do Operador</h1>
+            <p>Criar OS, consultar abertas e gerar PDF</p>
+          </div>
+          <button class="btn" onclick="logout()" style="color:#f87171;border-color:rgba(248,113,113,0.3)">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+            Sair
+          </button>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-bottom:20px">
+        <div class="stat"><div class="stat-ic" style="background:rgba(79,142,247,.12)"><svg fill="none" stroke="#4f8ef7" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg></div><div class="stat-v" id="livre-cnt-total">0</div><div class="stat-l">OS em aberto</div></div>
+        <div class="stat"><div class="stat-ic" style="background:rgba(251,191,36,.1)"><svg fill="none" stroke="#fbbf24" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div><div class="stat-v" style="color:#fbbf24" id="livre-cnt-pend">0</div><div class="stat-l">Pendentes</div></div>
+        <div class="stat"><div class="stat-ic" style="background:rgba(52,211,153,.1)"><svg fill="none" stroke="#34d399" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg></div><div class="stat-v" style="color:#34d399" id="livre-cnt-ok">0</div><div class="stat-l">Concluídas</div></div>
+      </div>
+
+      <!-- CRIAR OS -->
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-hd"><div class="card-t">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+          Criar Ordem de Serviço
+        </div></div>
+        <div class="card-b">
+          <div id="al-livre" class="alert a-ok" style="display:none">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><path d="M22 4 12 14.01l-3-3"/></svg>
+            <span id="al-livre-msg"></span>
+          </div>
+          <div class="fg c2" style="margin-bottom:14px">
+            <div class="field"><label>Seu nome</label><input id="lv-nome" type="text" placeholder="Nome do operador"></div>
+            <div class="field"><label>Equipamento</label>
+              <select id="lv-equip">
+                <option value="">Selecione...</option>
+                <option>DOLLY C11 (38)</option><option>DOLLY C12 (39)</option><option>DOLLY C20 (40)</option>
+                <option>DOLLY V01 (41)</option><option>DOLLY V05 (42)</option><option>DOLLY V06 (43)</option>
+                <option>DOLLY V07 (44)</option><option>DOLLY V08 (45)</option><option>DOLLY V09 (46)</option>
+              </select>
+            </div>
+          </div>
+          <div class="fg c2" style="margin-bottom:14px">
+            <div class="field"><label>Tipo</label>
+              <select id="lv-tipo"><option>Preventiva</option><option>Corretiva</option><option>Preditiva</option></select>
+            </div>
+            <div class="field"><label>Data programada</label><input type="date" id="lv-data"></div>
+          </div>
+          <div class="field" style="margin-bottom:14px"><label>Descrição do serviço</label><textarea id="lv-desc" placeholder="Descreva o serviço..."></textarea></div>
+          <div class="field" style="margin-bottom:14px"><label>Justificativa</label><textarea id="lv-just" placeholder="Motivo da OS..."></textarea></div>
+          <div style="display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn btn-p" onclick="criarOSLivre()">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/></svg>
+              Criar OS
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANUTENÇÕES ABERTAS -->
+      <div class="card">
+        <div class="card-hd">
+          <div class="card-t">
+            <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+            Manutenções em aberto
+          </div>
+          <div style="display:flex;gap:6px">
+            <div class="srch" style="max-width:220px">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>
+              <input type="text" id="lv-srch" placeholder="Pesquisar OS..." oninput="renderLivreOS()">
+            </div>
+            <button class="btn btn-sm" onclick="gerarPDFLivre()">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h4"/></svg>
+              Gerar PDF
+            </button>
+          </div>
+        </div>
+        <div class="tw"><table>
+          <thead><tr><th>Nº OS</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th><th>Data abertura</th><th>Dias abertos</th><th>Operador</th><th>Status</th></tr></thead>
+          <tbody id="lv-tbody"></tbody>
+        </table></div>
+        <div class="pag"><span id="lv-pag">0 registros</span><div class="pag-bs"><button class="pb on">1</button></div></div>
       </div>
     </div>
 
@@ -689,7 +781,7 @@ const equips=[
 let fltStatus='';
 
 // ── NAV ──────────────────────────────────────────────────────
-const sbMap={dashboard:'sb0',equipamentos:'sb1','novo-eq':'sb1',os:'sb2','nova-os':'sb2',manutencao:'sb3','rel-man':'sb4','rel-os':'sb4','manut-abertas':'sb4',usuarios:'sb0','novo-usuario':'sb0','painel-op':'sb2'};
+const sbMap={dashboard:'sb0',equipamentos:'sb1','novo-eq':'sb1',os:'sb2','nova-os':'sb2',manutencao:'sb3','rel-man':'sb4','rel-os':'sb4','manut-abertas':'sb4',usuarios:'sb0','novo-usuario':'sb0','painel-op':'sb2','livre':'sb0'};
 function go(name){
   document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));
   const el=document.getElementById('sec-'+name);
@@ -897,14 +989,15 @@ let loginRole = 'gestor';
 function selectRole(r){
   loginRole = r;
   document.getElementById('rt-gest').classList.toggle('on', r==='gestor');
-  document.getElementById('rt-op').classList.toggle('on', r==='operacional');
+  document.getElementById('rt-op').classList.toggle('on', r==='time');
+  document.getElementById('rt-livre').classList.toggle('on', r==='livre');
 }
 
 function doLogin(){
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pass').value;
   const err = document.getElementById('login-err');
-  const found = users.find(x => x.login===u && x.senha===p && x.perfil===loginRole);
+  const found = users.find(x => x.login===u && x.senha===p && (x.perfil===loginRole || (loginRole==='time' && x.perfil==='operacional')));
   if(!found){ err.style.display='flex'; return; }
   err.style.display='none';
   currentUser = found;
@@ -927,9 +1020,17 @@ function applyRole(){
     document.querySelectorAll('.nav-btn').forEach(b => b.style.display = '');
     navU.style.display = '';
     go('dashboard');
-  } else {
+  } else if(currentUser.perfil === 'time') {
     chip.className = 'perfil-chip perfil-op';
-    lbl.textContent = 'Operacional';
+    lbl.textContent = 'Time Manutenção';
+    av.textContent  = currentUser.initials;
+    navU.style.display = 'none';
+    document.querySelectorAll('.nav-btn').forEach(b => b.style.display = '');
+    document.getElementById('nav-usuarios').style.display = 'none';
+    document.getElementById('op-boas-vindas').textContent = 'Olá, ' + currentUser.nome;
+    go('painel-op');
+    renderOpOS();
+  } else {
     av.textContent  = currentUser.initials;
     navU.style.display = 'none';
     // hide gestor-only items
@@ -1066,7 +1167,7 @@ function salvarUser(){
   setTimeout(()=>{ al.style.display='none'; go('usuarios'); renderUsers(); }, 1800);
 }
 
-// ── PAINEL OPERACIONAL ────────────────────────────────────
+// ── PAINEL TIME DE MANUTENÇÃO ────────────────────────────────────
 function setOpFlt(s){
   opFlt=s;
   ['op-f-all','op-f-pend','op-f-ok'].forEach(id=>{const el=document.getElementById(id);if(el)el.classList.remove('on');});
@@ -1186,6 +1287,150 @@ function exportManutAbertas(){
   const a=document.createElement('a');
   a.href='data:text/csv;charset=utf-8,'+encodeURIComponent(rows.map(r=>r.join(',')).join('\n'));
   a.download='sese_manutencoes_abertas.csv'; a.click();
+}
+
+
+// ══════════════════════════════════════════════════════════
+// ACESSO LIVRE
+// ══════════════════════════════════════════════════════════
+function acessoLivre(){
+  document.getElementById('login-screen').style.display = 'none';
+  currentUser = {id:0, nome:'Operador', login:'livre', perfil:'livre', initials:'OP'};
+  // hide topbar nav entirely, show minimal
+  document.querySelectorAll('.nav-btn').forEach(b => b.style.display = 'none');
+  document.getElementById('nav-usuarios').style.display = 'none';
+  document.getElementById('nb-rel').style.display = 'none';
+  // set chip
+  document.getElementById('perfil-chip').className = 'perfil-chip perfil-op';
+  document.getElementById('perfil-label').textContent = 'Operador';
+  document.getElementById('topbar-avatar').textContent = 'OP';
+  // set date default
+  const today = new Date().toISOString().split('T')[0];
+  const lvData = document.getElementById('lv-data');
+  if(lvData) lvData.value = today;
+  go('livre');
+  renderLivreOS();
+}
+
+const staticOSLivre = [
+  {num:'001',equip:'DOLLY C11',tipo:'Preventiva',desc:'Revisão geral',data:'2026-05-10',oper:'João S.',status:'pending'},
+  {num:'002',equip:'DOLLY V01',tipo:'Corretiva',desc:'Troca de rolamentos',data:'2026-05-15',oper:'—',status:'pending'},
+  {num:'003',equip:'DOLLY V05',tipo:'Preventiva',desc:'Lubrificação geral',data:'2026-05-28',oper:'—',status:'pending'},
+];
+
+function getAllOpenOS(){
+  const dyn = osList.filter(o=>o.status==='pending').map(o=>({
+    num:o.num, equip:o.equip.replace(/ \(\d+\)/,''), tipo:o.tipo,
+    desc:o.desc||'—', data:o.data, oper:o.oper||'—', status:'pending'
+  }));
+  return [...dyn, ...staticOSLivre];
+}
+
+function renderLivreOS(){
+  const q = (document.getElementById('lv-srch')||{value:''}).value.toLowerCase();
+  const all = getAllOpenOS();
+  const filtered = all.filter(o =>
+    !q || o.num.includes(q) || o.equip.toLowerCase().includes(q) ||
+    o.tipo.toLowerCase().includes(q) || (o.desc||'').toLowerCase().includes(q)
+  );
+  const tipoCls = {Preventiva:'bb', Corretiva:'ba', Preditiva:'bp'};
+  document.getElementById('lv-tbody').innerHTML = filtered.length
+    ? filtered.map(o => {
+        const dias = diasAbertos(o.data);
+        return '<tr><td class="cod">#'+o.num+'</td><td style="font-weight:500">'+o.equip+'</td><td><span class="badge '+(tipoCls[o.tipo]||'bb')+'">'+o.tipo+'</span></td><td>'+o.desc+'</td><td class="mono">'+o.data+'</td><td>'+diasBadge(dias)+'</td><td>'+o.oper+'</td><td><span class="badge ba">Pendente</span></td></tr>';
+      }).join('')
+    : '<tr><td colspan="8" class="empty-c">Nenhuma OS em aberto</td></tr>';
+  const total = all.length;
+  document.getElementById('lv-pag').textContent = filtered.length + ' registros';
+  document.getElementById('livre-cnt-total').textContent = total;
+  document.getElementById('livre-cnt-pend').textContent  = all.filter(o=>o.status==='pending').length;
+  document.getElementById('livre-cnt-ok').textContent    = osList.filter(o=>o.status==='done').length;
+}
+
+function criarOSLivre(){
+  const nome  = document.getElementById('lv-nome').value.trim();
+  const equip = document.getElementById('lv-equip').value;
+  const tipo  = document.getElementById('lv-tipo').value;
+  const data  = document.getElementById('lv-data').value;
+  const desc  = document.getElementById('lv-desc').value.trim();
+  const just  = document.getElementById('lv-just').value.trim();
+  if(!equip){ document.getElementById('lv-equip').focus(); return; }
+  if(!data){ document.getElementById('lv-data').focus(); return; }
+  const num = gerarNumOS();
+  osList.unshift({num, equip, tipo, data, oper:nome||'Operador', desc, just, status:'pending'});
+  const al = document.getElementById('al-livre');
+  document.getElementById('al-livre-msg').textContent = 'OS #'+num+' criada com sucesso!';
+  al.style.display = 'flex';
+  ['lv-nome','lv-desc','lv-just'].forEach(id => document.getElementById(id).value='');
+  document.getElementById('lv-equip').value = '';
+  setTimeout(()=>{ al.style.display='none'; renderLivreOS(); }, 2200);
+}
+
+function gerarPDFLivre(){
+  const all = getAllOpenOS();
+  const now = new Date().toLocaleDateString('pt-BR');
+  const rows = all.map((o,i) => {
+    const dias = diasAbertos(o.data);
+    return \`<tr style="background:\${i%2===0?'#f9fafb':'#fff'}">
+      <td style="padding:8px 10px;border:1px solid #e5e7eb;font-family:monospace;color:#2563eb">#\${o.num}</td>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb;font-weight:600">\${o.equip}</td>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb">\${o.tipo}</td>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb">\${o.desc}</td>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb;font-family:monospace">\${o.data}</td>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb;font-weight:600;color:\${dias>7?'#dc2626':dias>3?'#d97706':'#16a34a'}">\${dias} dias</td>
+      <td style="padding:8px 10px;border:1px solid #e5e7eb">\${o.oper}</td>
+    </tr>\`;
+  }).join('');
+
+  const pdfHTML = \`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Manutenções em Aberto — SESÉ</title>
+<style>
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family: Arial, sans-serif; padding: 32px; color: #111; background:#fff; }
+  .header { display:flex; align-items:center; justify-content:space-between; margin-bottom:24px; padding-bottom:16px; border-bottom:3px solid #2563eb; }
+  .header h1 { font-size:20px; color:#1e3a5f; }
+  .header .meta { font-size:12px; color:#6b7280; text-align:right; }
+  .summary { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+  .sum-box { border:1px solid #e5e7eb; border-radius:8px; padding:12px 16px; text-align:center; }
+  .sum-val { font-size:26px; font-weight:700; }
+  .sum-lbl { font-size:11px; color:#6b7280; margin-top:2px; }
+  table { width:100%; border-collapse:collapse; font-size:12px; }
+  thead th { background:#1e3a5f; color:#fff; padding:10px; text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.5px; }
+  .footer { margin-top:24px; text-align:center; font-size:11px; color:#9ca3af; border-top:1px solid #e5e7eb; padding-top:12px; }
+  @media print { body { padding:16px; } }
+</style>
+</head>
+<body>
+<div class="header">
+  <div>
+    <h1>Manutenções em Aberto</h1>
+    <p style="font-size:13px;color:#6b7280;margin-top:4px">SESÉ — Sistema de Manutenção</p>
+  </div>
+  <div class="meta">
+    <div>Emitido em: <strong>\${now}</strong></div>
+    <div>Total de OS: <strong>\${all.length}</strong></div>
+  </div>
+</div>
+<div class="summary">
+  <div class="sum-box"><div class="sum-val" style="color:#2563eb">\${all.length}</div><div class="sum-lbl">Total em aberto</div></div>
+  <div class="sum-box"><div class="sum-val" style="color:#d97706">\${all.filter(o=>diasAbertos(o.data)>7).length}</div><div class="sum-lbl">Críticas (+7 dias)</div></div>
+  <div class="sum-box"><div class="sum-val" style="color:#16a34a">\${all.filter(o=>o.tipo==='Preventiva').length}</div><div class="sum-lbl">Preventivas</div></div>
+</div>
+<table>
+  <thead><tr><th>Nº OS</th><th>Equipamento</th><th>Tipo</th><th>Descrição</th><th>Data abertura</th><th>Dias abertos</th><th>Operador</th></tr></thead>
+  <tbody>\${rows}</tbody>
+</table>
+<div class="footer">SESÉ Sistema de Manutenção · Documento gerado automaticamente em \${now}</div>
+</body></html>\`;
+
+  const win = window.open('','_blank','width=900,height=700');
+  win.document.write(pdfHTML);
+  win.document.close();
+  win.focus();
+  setTimeout(()=>win.print(), 600);
 }
 
 // ── FOTO PREVIEW ─────────────────────────────────────────
