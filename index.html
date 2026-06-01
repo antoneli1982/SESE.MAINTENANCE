@@ -208,75 +208,72 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
 .perfil-op{background:rgba(52,211,153,0.1);color:#34d399;border:1px solid rgba(52,211,153,0.25)}
 
 </style>
-<!-- Firebase SDK -->
-<script type="module">
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getDatabase, ref, set, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+<!-- Firebase SDK (compat — funciona sem module) -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-database-compat.js"></script>
+<script>
+(function(){
+  try {
+    const firebaseConfig = {
+      apiKey: "AIzaSyA4u0J57SMSA4fA6ypZXRgXNrjKozYyGpo",
+      authDomain: "sesemaintenance.firebaseapp.com",
+      databaseURL: "https://sesemaintenance-default-rtdb.firebaseio.com",
+      projectId: "sesemaintenance",
+      storageBucket: "sesemaintenance.firebasestorage.app",
+      messagingSenderId: "146204824140",
+      appId: "1:146204824140:web:7935b33ca9ef4164865ae9"
+    };
+    firebase.initializeApp(firebaseConfig);
+    window._db = firebase.database();
+    window._fbReady = true;
 
-  const firebaseConfig = {
-    apiKey: "AIzaSyA4u0J57SMSA4fA6ypZXRgXNrjKozYyGpo",
-    authDomain: "sesemaintenance.firebaseapp.com",
-    databaseURL: "https://sesemaintenance-default-rtdb.firebaseio.com",
-    projectId: "sesemaintenance",
-    storageBucket: "sesemaintenance.firebasestorage.app",
-    messagingSenderId: "146204824140",
-    appId: "1:146204824140:web:7935b33ca9ef4164865ae9"
-  };
+    // Sincronizar usuários
+    window._db.ref('users').on('value', snap => {
+      const data = snap.val();
+      if(data && window.users){
+        window.users.length = 0;
+        Object.entries(data).forEach(([k,v]) => window.users.push({...v, _key:k}));
+      }
+      const dot = document.getElementById('fb-status');
+      if(dot){ dot.style.background='#34d399'; dot.title='Firebase conectado'; }
+    });
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getDatabase(app);
-  window._db   = db;
-  window._ref  = ref;
-  window._set  = set;
-  window._push = push;
-  window._onValue = onValue;
-  window._update  = update;
-  window._remove  = remove;
-  window._fbReady = true;
+    // Sincronizar OS
+    window._db.ref('os').on('value', snap => {
+      const data = snap.val();
+      if(window.osList){ window.osList.length = 0; }
+      if(data){
+        Object.entries(data).forEach(([k,v]) => window.osList.unshift({...v, _key:k}));
+      }
+      if(window.renderDash) window.renderDash();
+      if(document.getElementById('sec-os')?.classList.contains('on') && window.renderOpOS) window.renderOpOS();
+      if(document.getElementById('sec-manut-abertas')?.classList.contains('on') && window.renderManutAbertas) window.renderManutAbertas();
+      if(document.getElementById('sec-manutencao')?.classList.contains('on') && window.renderManOS) window.renderManOS();
+    });
 
-  // ── Sincronizar usuários ──────────────────────────────────
-  onValue(ref(db, 'users'), snap => {
-    const data = snap.val();
-    if(data){
-      window.users.length = 0;
-      Object.entries(data).forEach(([k,v]) => window.users.push({...v, _key:k}));
-    }
-  });
+    // Sincronizar Equipamentos
+    window._db.ref('equips').on('value', snap => {
+      const data = snap.val();
+      if(data && window.equips){
+        window.equips.length = 0;
+        Object.entries(data).forEach(([k,v]) => window.equips.push({...v, _key:k}));
+      }
+      if(document.getElementById('sec-equipamentos')?.classList.contains('on') && window.renderEq) window.renderEq();
+      if(window.renderDash) window.renderDash();
+    });
 
-  // ── Sincronizar OS ────────────────────────────────────────
-  onValue(ref(db, 'os'), snap => {
-    const data = snap.val();
-    window.osList.length = 0;
-    if(data){
-      Object.entries(data).forEach(([k,v]) => window.osList.unshift({...v, _key:k}));
-    }
-    if(window.renderDash) renderDash();
-    if(document.getElementById('sec-os')?.classList.contains('on')) renderOpOS();
-    if(document.getElementById('sec-manut-abertas')?.classList.contains('on')) renderManutAbertas();
-    if(document.getElementById('sec-manutencao')?.classList.contains('on')) renderManOS();
-  });
+    // Sincronizar Manutenções
+    window._db.ref('manutencoes').on('value', snap => {
+      const data = snap.val();
+      window.manutList = [];
+      if(data){ Object.entries(data).forEach(([k,v]) => window.manutList.unshift({...v, _key:k})); }
+    });
 
-  // ── Sincronizar Equipamentos ──────────────────────────────
-  onValue(ref(db, 'equips'), snap => {
-    const data = snap.val();
-    if(data){
-      window.equips.length = 0;
-      Object.entries(data).forEach(([k,v]) => window.equips.push({...v, _key:k}));
-    }
-    if(document.getElementById('sec-equipamentos')?.classList.contains('on')) renderEq();
-    if(window.renderDash) renderDash();
-  });
-
-  // ── Sincronizar Manutenções ───────────────────────────────
-  onValue(ref(db, 'manutencoes'), snap => {
-    const data = snap.val();
-    window.manutList = [];
-    if(data){
-      Object.entries(data).forEach(([k,v]) => window.manutList.unshift({...v, _key:k}));
-    }
-  });
-
-  window.dispatchEvent(new Event('fbReady'));
+  } catch(e) {
+    console.warn('Firebase não carregou:', e.message);
+    window._fbReady = false;
+  }
+})();
 </script>
 </head>
 <body>
@@ -1039,9 +1036,7 @@ function salvarOS(){
   const novaOS = {num,equip,tipo,data,oper,desc,just,status:'pending'};
   osList.unshift(novaOS);
   // Gravar no Firebase
-  if(window._fbReady){
-    window._push(window._ref(window._db,'os'), novaOS);
-  }
+  if(window._fbReady){ window._db.ref('os').push(novaOS); }
   // show success
   const al=document.getElementById('al-os');
   document.getElementById('al-os-msg').textContent='OS #'+num+' criada com sucesso!';
@@ -1334,7 +1329,7 @@ function salvarUser(){
   } else {
     const novoUser = {id: Date.now(), nome, login, chapa, perfil, email, setor, initials, foto: foto||null};
     users.push(novoUser);
-    if(window._fbReady) window._push(window._ref(window._db,'users'), novoUser);
+    if(window._fbReady) window._db.ref('users').push(novoUser);
     document.getElementById('al-user-msg').textContent = 'Usuário cadastrado com sucesso!';
   }
 
@@ -1584,9 +1579,6 @@ function gerarPDFLivre(){
   .footer { margin-top:24px; text-align:center; font-size:11px; color:#9ca3af; border-top:1px solid #e5e7eb; padding-top:12px; }
   @media print { body { padding:16px; } }
 </style>
-<!-- Firebase SDK -->
-<script type="module">
-  </script>
 </head>
 <body>
 <div class="header">
@@ -1714,9 +1706,7 @@ function salvarApontamento(){
   const osIdx = osList.findIndex(o => o.num === num);
   if(osIdx !== -1){
     osList[osIdx].status = 'done';
-    if(window._fbReady && osList[osIdx]._key){
-      window._update(window._ref(window._db,'os/'+osList[osIdx]._key), {status:'done'});
-    }
+    if(window._fbReady && osList[osIdx]._key){ window._db.ref('os/'+osList[osIdx]._key).update({status:'done'}); }
   }
   // Gravar apontamento no Firebase
   const apontamento = {
@@ -1729,7 +1719,7 @@ function salvarApontamento(){
     desc: document.getElementById('man-desc').value,
     criadoEm: new Date().toISOString()
   };
-  if(window._fbReady) window._push(window._ref(window._db,'manutencoes'), apontamento);
+  if(window._fbReady) window._db.ref('manutencoes').push(apontamento);
   // Mostrar sucesso
   const al  = document.getElementById('al-man');
   document.getElementById('al-man-msg').textContent = 'Apontamento registrado — OS #' + num + ' encerrada!';
