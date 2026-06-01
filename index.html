@@ -164,10 +164,12 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
 .login-error{background:rgba(248,113,113,.1);color:#f87171;border:1px solid rgba(248,113,113,.2);border-radius:8px;padding:10px 14px;font-size:13px;display:flex;align-items:center;gap:8px;margin-bottom:16px}
 .login-error svg{width:15px;height:15px;flex-shrink:0}
 .role-tabs{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:20px}
-.role-tab{padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.08);background:transparent;color:#8892a4;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .15s;display:flex;flex-direction:column;align-items:center;gap:5px}
-.role-tab svg{width:20px;height:20px}
-.role-tab:hover{border-color:rgba(79,142,247,0.3);color:#e8eaf0}
-.role-tab.on{border-color:#4f8ef7;background:rgba(79,142,247,0.1);color:#4f8ef7}
+.role-tab{padding:10px;border-radius:10px;border:1px solid rgba(255,255,255,0.05);background:rgba(255,255,255,0.03);color:rgba(255,255,255,0.2);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;transition:all .2s;display:flex;flex-direction:column;align-items:center;gap:5px}
+.role-tab svg{width:20px;height:20px;opacity:0.3;transition:opacity .2s}
+.role-tab:hover{border-color:rgba(255,255,255,0.15);color:rgba(255,255,255,0.5)}
+.role-tab:hover svg{opacity:0.6}
+.role-tab.on{border-color:#34d399;background:rgba(52,211,153,0.12);color:#34d399;box-shadow:0 0 10px rgba(52,211,153,0.15)}
+.role-tab.on svg{opacity:1}
 .role-label{font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
 
 /* ── CADASTRO USUÁRIOS ────────────────────────────────────── */
@@ -201,7 +203,7 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
     </div>
     <div class="login-body">
       <div class="role-tabs" style="margin-bottom:20px;grid-template-columns:1fr 1fr 1fr">
-        <button class="role-tab on" id="rt-gest" onclick="selectRole('gestor')">
+        <button class="role-tab" id="rt-gest" onclick="selectRole('gestor')">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
           <span class="role-label">Gestor</span>
         </button>
@@ -209,9 +211,9 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
           <span class="role-label">Operacional Manut.</span>
         </button>
-        <button class="role-tab" id="rt-livre" onclick="acessoLivre()" style="border:2px solid rgba(52,211,153,0.4);background:rgba(52,211,153,0.08)">
-          <svg fill="none" stroke="#34d399" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
-          <span class="role-label" style="color:#34d399">Abrir OS</span>
+        <button class="role-tab" id="rt-livre" onclick="acessoLivre()">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2M9 5a2 2 0 0 0 2 2h2a2 2 0 0 0 2-2M9 5a2 2 0 0 1 2-2h2a2 2 0 0 1 2 2"/></svg>
+          <span class="role-label">Abrir OS</span>
         </button>
       </div>
       <div id="login-err" class="login-error" style="display:none">
@@ -987,16 +989,18 @@ const users = [
 let loginRole = 'gestor';
 function selectRole(r){
   loginRole = r;
-  document.getElementById('rt-gest').classList.toggle('on', r==='gestor');
-  document.getElementById('rt-op').classList.toggle('on', r==='time');
-  document.getElementById('rt-livre').classList.toggle('on', r==='livre');
+  ['rt-gest','rt-op','rt-livre'].forEach(id=>document.getElementById(id).classList.remove('on'));
+  if(r==='gestor') document.getElementById('rt-gest').classList.add('on');
+  if(r==='time')   document.getElementById('rt-op').classList.add('on');
 }
 
 function doLogin(){
   const u = document.getElementById('login-user').value.trim();
   const p = document.getElementById('login-pass').value;
   const err = document.getElementById('login-err');
-  const found = users.find(x => x.login===u && x.senha===p && (x.perfil===loginRole || (loginRole==='time' && x.perfil==='operacional')));
+  const roleMap = {'gestor':'gestor','time':'operacional'};
+  const expectedPerfil = roleMap[loginRole] || loginRole;
+  const found = users.find(x => x.login===u && x.senha===p && x.perfil===expectedPerfil);
   if(!found){ err.style.display='flex'; return; }
   err.style.display='none';
   currentUser = found;
@@ -1019,7 +1023,7 @@ function applyRole(){
     document.querySelectorAll('.nav-btn').forEach(b => b.style.display = '');
     navU.style.display = '';
     go('dashboard');
-  } else if(currentUser.perfil === 'time') {
+  } else if(currentUser.perfil === 'operacional' || currentUser.perfil === 'time') {
     chip.className = 'perfil-chip perfil-op';
     lbl.textContent = 'Time Manutenção';
     av.textContent  = currentUser.initials;
