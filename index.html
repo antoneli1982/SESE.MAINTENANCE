@@ -614,7 +614,10 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
           <div class="field"><label>Tipo</label><select id="os-tipo"><option>Preventiva</option><option>Corretiva</option><option>Preditiva</option></select></div>
         </div>
         <div class="fg c2">
-          <div class="field"><label>Data programada</label><input type="date" id="os-data"></div>
+          <div class="field"><label>Data de abertura</label><input type="date" id="os-data"></div>
+          <div class="field"><label>Hora de abertura</label><input type="time" id="os-hora"></div>
+        </div>
+        <div class="fg c2">
           <div class="field"><label>Operador responsável</label><input type="text" id="os-oper" placeholder="Nome do técnico"></div>
         </div>
         <div class="field" style="margin-bottom:14px"><label>Descrição do serviço</label><textarea id="os-desc" placeholder="Descreva o serviço a ser realizado..."></textarea></div>
@@ -946,6 +949,16 @@ function go(name){
   const sid=sbMap[name];
   if(sid) document.getElementById(sid).classList.add('on');
   if(name==='dashboard') renderDash();
+  if(name==='nova-os'){
+    const agora   = new Date();
+    const dataEl  = document.getElementById('os-data');
+    const horaEl  = document.getElementById('os-hora');
+    const pad     = v => String(v).padStart(2,'0');
+    const hoje    = agora.getFullYear()+'-'+pad(agora.getMonth()+1)+'-'+pad(agora.getDate());
+    const horaAgora = pad(agora.getHours())+':'+pad(agora.getMinutes());
+    if(dataEl) dataEl.value = hoje;
+    if(horaEl) horaEl.value = horaAgora;
+  }
   if(name==='manutencao') renderManOS();
   if(name==='equipamentos') renderEq();
   if(name==='usuarios') renderUsers();
@@ -1084,10 +1097,13 @@ function salvarOS(){
   const oper=document.getElementById('os-oper').value.trim();
   const desc=document.getElementById('os-desc').value.trim();
   const just=document.getElementById('os-just').value.trim();
+  // Hora: usa campo ou hora atual automaticamente
+  const horaInput = document.getElementById('os-hora');
+  const hora = (horaInput && horaInput.value) ? horaInput.value : new Date().toTimeString().slice(0,5);
   if(!equip||equip==='Selecione...'){document.getElementById('os-equip').focus();return;}
   if(!data){document.getElementById('os-data').focus();return;}
   const num=gerarNumOS();
-  const novaOS = {num,equip,tipo,data,oper,desc,just,status:'pending'};
+  const novaOS = {num,equip,tipo,data,hora,oper,desc,just,status:'pending'};
   osList.unshift(novaOS);
   // Gravar no Firebase
   if(window._fbReady){ window._db.ref('os').push(novaOS); }
@@ -1098,6 +1114,7 @@ function salvarOS(){
   // clear form
   document.getElementById('os-equip').value='';
   document.getElementById('os-data').value='';
+  if(document.getElementById('os-hora')) document.getElementById('os-hora').value='';
   document.getElementById('os-oper').value='';
   document.getElementById('os-desc').value='';
   document.getElementById('os-just').value='';
@@ -1105,7 +1122,7 @@ function salvarOS(){
   document.getElementById('dest-num').textContent='#'+num;
   document.getElementById('dest-equip').textContent=equip.replace(/ \(\d+\)/,'');
   document.getElementById('dest-tipo').textContent=tipo;
-  document.getElementById('dest-data').textContent=data;
+  document.getElementById('dest-data').textContent=data+(hora?' às '+hora:'');
   document.getElementById('dest-oper').textContent=oper||'—';
   document.getElementById('dest-desc').textContent=desc||'—';
   setTimeout(()=>{al.style.display='none';go('os');renderOS();document.getElementById('os-destaque').style.display='block';},2000);
@@ -1120,7 +1137,7 @@ function renderOS(){
   ];
   const dynRows=osList.map(o=>({
     num:o.num, equip:o.equip.replace(/ \(\d+\)/,''), desc:o.desc||'—',
-    data:o.data, real:'—',
+    data:o.data+(o.hora?' '+o.hora:''), real:'—',
     tipo:'bb|'+o.tipo, oper:o.oper||'—', st:'ba|Pendente'
   }));
   const all=[...dynRows,...staticRows];
@@ -1514,7 +1531,7 @@ function renderManutAbertas(){
 
 function exportManutAbertas(){
   const rows = [['Nº OS','Equipamento','Tipo','Descricao','Data abertura','Dias abertos','Operador','Status']];
-  const dynPend = osList.filter(o=>o.status==='pending').map(o=>({num:o.num,equip:o.equip.replace(/ \(\d+\)/,''),tipo:o.tipo,desc:o.desc||'—',data:o.data,oper:o.oper||'—'}));
+  const dynPend = osList.filter(o=>o.status==='pending').map(o=>({num:o.num,equip:o.equip.replace(/ \(\d+\)/,''),tipo:o.tipo,desc:o.desc||'—',data:o.data,hora:o.hora||'',oper:o.oper||'—'}));
   [...dynPend,...staticOS].forEach(o=>{
     rows.push([o.num,o.equip,o.tipo,o.desc,o.data,diasAbertos(o.data),o.oper,'Pendente']);
   });
@@ -1555,7 +1572,7 @@ const staticOSLivre = [
 function getAllOpenOS(){
   const dyn = osList.filter(o=>o.status==='pending').map(o=>({
     num:o.num, equip:o.equip.replace(/ \(\d+\)/,''), tipo:o.tipo,
-    desc:o.desc||'—', data:o.data, oper:o.oper||'—', status:'pending'
+    desc:o.desc||'—', data:o.data, hora:o.hora||'', oper:o.oper||'—', status:'pending'
   }));
   return [...dyn, ...staticOSLivre];
 }
@@ -1571,7 +1588,7 @@ function renderLivreOS(){
   document.getElementById('lv-tbody').innerHTML = filtered.length
     ? filtered.map(o => {
         const dias = diasAbertos(o.data);
-        return '<tr><td class="cod">#'+o.num+'</td><td style="font-weight:500">'+o.equip+'</td><td><span class="badge '+(tipoCls[o.tipo]||'bb')+'">'+o.tipo+'</span></td><td>'+o.desc+'</td><td class="mono">'+o.data+'</td><td>'+diasBadge(dias)+'</td><td>'+o.oper+'</td><td><span class="badge ba">Pendente</span></td></tr>';
+        return '<tr><td class="cod">#'+o.num+'</td><td style="font-weight:500">'+o.equip+'</td><td><span class="badge '+(tipoCls[o.tipo]||'bb')+'">'+o.tipo+'</span></td><td>'+o.desc+'</td><td class="mono">'+o.data+(o.hora?' '+o.hora:'')+'</td><td>'+diasBadge(dias)+'</td><td>'+o.oper+'</td><td><span class="badge ba">Pendente</span></td></tr>';
       }).join('')
     : '<tr><td colspan="8" class="empty-c">Nenhuma OS em aberto</td></tr>';
   const total = all.length;
