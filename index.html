@@ -1140,6 +1140,7 @@ function entrarOS(){
   card.classList.add('sel-os');
   setTimeout(()=>{
     currentUser = {id:0, nome:'Acesso Livre', login:'livre', perfil:'livre', initials:'AL'};
+    localStorage.setItem('sese_session', JSON.stringify({perfil:'livre'}));
     document.getElementById('login-screen').style.display = 'none';
     // Topbar
     document.getElementById('perfil-chip').className = 'perfil-chip perfil-op';
@@ -1168,6 +1169,7 @@ function doLoginGestor(){
   if(!gestor){ err.style.display='flex'; return; }
   err.style.display = 'none';
   currentUser = {...gestor};
+  localStorage.setItem('sese_session', JSON.stringify({perfil:'gestor', chapa: gestor.chapa, nome: gestor.nome, initials: gestor.initials}));
   document.getElementById('login-screen').style.display = 'none';
   applyRole();
 }
@@ -1213,6 +1215,7 @@ function applyRole(){
 
 function logout(){
   currentUser = null;
+  localStorage.removeItem('sese_session');
   // Reset visual do login
   document.getElementById('rc-gest').classList.remove('sel-gestor');
   document.getElementById('rc-os').classList.remove('sel-os');
@@ -1741,12 +1744,58 @@ function limparApontamento(){
 // ── INIT ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('topdate').textContent = new Date().toLocaleDateString('pt-BR');
-  document.getElementById('login-screen').style.display = 'flex';
-  // Mostrar indicador de conexão
+
+  // Indicador Firebase
   const dot = document.getElementById('fb-status');
   window.addEventListener('fbReady', () => {
     if(dot){ dot.style.background = '#34d399'; dot.title = 'Firebase conectado'; }
   });
+
+  // Restaurar sessão após F5
+  const saved = localStorage.getItem('sese_session');
+  if(saved){
+    try {
+      const s = JSON.parse(saved);
+      if(s.perfil === 'livre'){
+        // Restaurar acesso livre
+        currentUser = {id:0, nome:'Acesso Livre', login:'livre', perfil:'livre', initials:'AL'};
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('perfil-chip').className = 'perfil-chip perfil-op';
+        document.getElementById('perfil-label').textContent = 'Acesso Livre';
+        document.getElementById('topbar-avatar').textContent = 'AL';
+        document.querySelectorAll('.nav-btn').forEach(b => b.style.display = 'none');
+        ['nb-os','nb-man','nb-rel'].forEach(id => {
+          const el = document.getElementById(id);
+          if(el) el.style.display = '';
+        });
+        go('os');
+      } else if(s.perfil === 'gestor'){
+        // Restaurar gestor — aguardar Firebase carregar os users
+        const tentarRestaurar = (tentativa) => {
+          const gestor = users.find(u => u.perfil === 'gestor' && u.chapa === s.chapa);
+          if(gestor){
+            currentUser = {...gestor};
+            document.getElementById('login-screen').style.display = 'none';
+            applyRole();
+          } else if(tentativa < 10){
+            // Firebase ainda carregando users — tentar de novo
+            setTimeout(() => tentarRestaurar(tentativa + 1), 300);
+          } else {
+            // Não achou — mostrar login normalmente
+            document.getElementById('login-screen').style.display = 'flex';
+          }
+        };
+        tentarRestaurar(0);
+      } else {
+        document.getElementById('login-screen').style.display = 'flex';
+      }
+    } catch(e){
+      localStorage.removeItem('sese_session');
+      document.getElementById('login-screen').style.display = 'flex';
+    }
+  } else {
+    document.getElementById('login-screen').style.display = 'flex';
+  }
 });
 </script>
 </body>
