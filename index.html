@@ -208,6 +208,76 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
 .perfil-op{background:rgba(52,211,153,0.1);color:#34d399;border:1px solid rgba(52,211,153,0.25)}
 
 </style>
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, set, push, onValue, update, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyA4u0J57SMSA4fA6ypZXRgXNrjKozYyGpo",
+    authDomain: "sesemaintenance.firebaseapp.com",
+    databaseURL: "https://sesemaintenance-default-rtdb.firebaseio.com",
+    projectId: "sesemaintenance",
+    storageBucket: "sesemaintenance.firebasestorage.app",
+    messagingSenderId: "146204824140",
+    appId: "1:146204824140:web:7935b33ca9ef4164865ae9"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getDatabase(app);
+  window._db   = db;
+  window._ref  = ref;
+  window._set  = set;
+  window._push = push;
+  window._onValue = onValue;
+  window._update  = update;
+  window._remove  = remove;
+  window._fbReady = true;
+
+  // ── Sincronizar usuários ──────────────────────────────────
+  onValue(ref(db, 'users'), snap => {
+    const data = snap.val();
+    if(data){
+      window.users.length = 0;
+      Object.entries(data).forEach(([k,v]) => window.users.push({...v, _key:k}));
+    }
+  });
+
+  // ── Sincronizar OS ────────────────────────────────────────
+  onValue(ref(db, 'os'), snap => {
+    const data = snap.val();
+    window.osList.length = 0;
+    if(data){
+      Object.entries(data).forEach(([k,v]) => window.osList.unshift({...v, _key:k}));
+    }
+    if(window.renderDash) renderDash();
+    if(document.getElementById('sec-os')?.classList.contains('on')) renderOpOS();
+    if(document.getElementById('sec-manut-abertas')?.classList.contains('on')) renderManutAbertas();
+    if(document.getElementById('sec-manutencao')?.classList.contains('on')) renderManOS();
+  });
+
+  // ── Sincronizar Equipamentos ──────────────────────────────
+  onValue(ref(db, 'equips'), snap => {
+    const data = snap.val();
+    if(data){
+      window.equips.length = 0;
+      Object.entries(data).forEach(([k,v]) => window.equips.push({...v, _key:k}));
+    }
+    if(document.getElementById('sec-equipamentos')?.classList.contains('on')) renderEq();
+    if(window.renderDash) renderDash();
+  });
+
+  // ── Sincronizar Manutenções ───────────────────────────────
+  onValue(ref(db, 'manutencoes'), snap => {
+    const data = snap.val();
+    window.manutList = [];
+    if(data){
+      Object.entries(data).forEach(([k,v]) => window.manutList.unshift({...v, _key:k}));
+    }
+  });
+
+  window.dispatchEvent(new Event('fbReady'));
+</script>
 </head>
 <body>
 
@@ -950,6 +1020,7 @@ function salvarEq(){
 
 // ── SALVAR OS ────────────────────────────────────────────────
 const osList = [];
+window.manutList = [];
 function gerarNumOS(){
   const n=new Date();
   const pad=v=>String(v).padStart(2,'0');
@@ -965,7 +1036,12 @@ function salvarOS(){
   if(!equip||equip==='Selecione...'){document.getElementById('os-equip').focus();return;}
   if(!data){document.getElementById('os-data').focus();return;}
   const num=gerarNumOS();
-  osList.unshift({num,equip,tipo,data,oper,desc,just,status:'pending'});
+  const novaOS = {num,equip,tipo,data,oper,desc,just,status:'pending'};
+  osList.unshift(novaOS);
+  // Gravar no Firebase
+  if(window._fbReady){
+    window._push(window._ref(window._db,'os'), novaOS);
+  }
   // show success
   const al=document.getElementById('al-os');
   document.getElementById('al-os-msg').textContent='OS #'+num+' criada com sucesso!';
@@ -1256,7 +1332,9 @@ function salvarUser(){
     }
     document.getElementById('al-user-msg').textContent = 'Usuário atualizado com sucesso!';
   } else {
-    users.push({id: Date.now(), nome, login, chapa, perfil, email, setor, initials, foto});
+    const novoUser = {id: Date.now(), nome, login, chapa, perfil, email, setor, initials, foto: foto||null};
+    users.push(novoUser);
+    if(window._fbReady) window._push(window._ref(window._db,'users'), novoUser);
     document.getElementById('al-user-msg').textContent = 'Usuário cadastrado com sucesso!';
   }
 
@@ -1506,6 +1584,9 @@ function gerarPDFLivre(){
   .footer { margin-top:24px; text-align:center; font-size:11px; color:#9ca3af; border-top:1px solid #e5e7eb; padding-top:12px; }
   @media print { body { padding:16px; } }
 </style>
+<!-- Firebase SDK -->
+<script type="module">
+  </script>
 </head>
 <body>
 <div class="header">
@@ -1629,9 +1710,26 @@ function salvarApontamento(){
   if(!num)  { document.getElementById('man-os-sel').focus(); return; }
   if(!data) { document.getElementById('man-data').focus(); return; }
   if(!oper) { document.getElementById('man-oper').focus(); return; }
-  // Marcar OS como concluída
+  // Marcar OS como concluída localmente e no Firebase
   const osIdx = osList.findIndex(o => o.num === num);
-  if(osIdx !== -1) osList[osIdx].status = 'done';
+  if(osIdx !== -1){
+    osList[osIdx].status = 'done';
+    if(window._fbReady && osList[osIdx]._key){
+      window._update(window._ref(window._db,'os/'+osList[osIdx]._key), {status:'done'});
+    }
+  }
+  // Gravar apontamento no Firebase
+  const apontamento = {
+    osNum: num,
+    equip: document.getElementById('man-equip').value,
+    tipo: document.getElementById('man-tipo').value,
+    data: document.getElementById('man-data').value,
+    oper: document.getElementById('man-oper').value,
+    proxima: document.getElementById('man-proxima').value,
+    desc: document.getElementById('man-desc').value,
+    criadoEm: new Date().toISOString()
+  };
+  if(window._fbReady) window._push(window._ref(window._db,'manutencoes'), apontamento);
   // Mostrar sucesso
   const al  = document.getElementById('al-man');
   document.getElementById('al-man-msg').textContent = 'Apontamento registrado — OS #' + num + ' encerrada!';
@@ -1654,6 +1752,11 @@ function limparApontamento(){
 document.addEventListener('DOMContentLoaded', function(){
   document.getElementById('topdate').textContent = new Date().toLocaleDateString('pt-BR');
   document.getElementById('login-screen').style.display = 'flex';
+  // Mostrar indicador de conexão
+  const dot = document.getElementById('fb-status');
+  window.addEventListener('fbReady', () => {
+    if(dot){ dot.style.background = '#34d399'; dot.title = 'Firebase conectado'; }
+  });
 });
 </script>
 </body>
