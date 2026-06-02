@@ -249,7 +249,8 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
     // Sincronizar OS
     window._db.ref('os').on('value', snap => {
       const data = snap.val();
-      if(window.osList){ window.osList.length = 0; }
+      if(!window.osList) window.osList = [];
+      window.osList.length = 0;
       if(data){
         Object.entries(data).forEach(([k,v]) => window.osList.unshift({...v, _key:k}));
       }
@@ -936,6 +937,7 @@ const equips=[
   {id:45,desc:"DOLLY V08",area:"VIRABREQUIM",origem:"VRB",destino:"NA",tacto:"45s",tipo:"Dolly",data:"2017-01-26",prox:"2026-08-05",status:"ok"},
   {id:46,desc:"DOLLY V09",area:"VIRABREQUIM",origem:"VRB",destino:"NA",tacto:"45s",tipo:"Dolly",data:"2017-01-26",prox:"2026-05-10",status:"pending"},
 ];
+window.equips = equips; // expõe para o sincronismo do Firebase
 
 let fltStatus='';
 
@@ -1084,6 +1086,7 @@ function salvarEq(){
 
 // ── SALVAR OS ────────────────────────────────────────────────
 const osList = [];
+window.osList = osList; // expõe para o sincronismo do Firebase
 window.manutList = [];
 function gerarNumOS(){
   const n=new Date();
@@ -1194,6 +1197,7 @@ const users = [
   {id:2, nome:'João Silva', login:'joao', chapa:'', perfil:'operacional', email:'joao@sese.com', setor:'Manutenção', initials:'JS'},
   {id:3, nome:'Maria Lima', login:'maria', chapa:'', perfil:'operacional', email:'maria@sese.com', setor:'Produção', initials:'ML'},
 ];
+window.users = users; // expõe para o sincronismo do Firebase
 
 // ── AUTH ──────────────────────────────────────────────────────
 function selectLoginRole(role){
