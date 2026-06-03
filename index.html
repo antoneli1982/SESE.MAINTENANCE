@@ -2,7 +2,7 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>index</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500;9..40,600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
@@ -214,6 +214,92 @@ tbody tr:hover td{background:rgba(255,255,255,0.02)}
 .perfil-chip{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:500;cursor:pointer}
 .perfil-gest{background:rgba(79,142,247,0.15);color:#4f8ef7;border:1px solid rgba(79,142,247,0.3)}
 .perfil-op{background:rgba(52,211,153,0.1);color:#34d399;border:1px solid rgba(52,211,153,0.25)}
+
+/* ════════════════════════════════════════════════════════════
+   RESPONSIVO — TABLET E CELULAR (Android / iOS)
+════════════════════════════════════════════════════════════ */
+
+/* Tablet e telas médias: reduz colunas de grids */
+@media (max-width:900px){
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .c3,.c4{grid-template-columns:1fr 1fr}
+}
+
+/* Celular */
+@media (max-width:640px){
+  /* Evita zoom automático de input no iOS (precisa >=16px) e melhora toque */
+  .field input,.field select,.field textarea,
+  .srch input,.period-bar input[type=date],
+  #login-pass,.login-body input,.login-body select{font-size:16px}
+
+  /* Altura real considerando barra do navegador no mobile */
+  body{min-height:100vh;min-height:100dvh}
+
+  /* TOPBAR enxuta: só logo + perfil + avatar (a navegação vai pra barra inferior) */
+  .topbar{padding:0 12px;gap:6px;height:54px}
+  .topbar .nav-btn{display:none !important}
+  .logo{height:22px;margin-right:0}
+  .topbar-r{gap:8px}
+  .chip{display:none}              /* data ocupa espaço e não é essencial no mobile */
+  .perfil-chip{padding:4px 8px}
+
+  /* LAYOUT em coluna; sidebar vira barra de abas no rodapé */
+  .layout{flex-direction:column;height:auto;min-height:calc(100vh - 54px);min-height:calc(100dvh - 54px)}
+  .sidebar{
+    position:fixed;left:0;right:0;bottom:0;top:auto;
+    width:100%;height:auto;flex-direction:row;justify-content:space-around;align-items:center;
+    border-right:none;border-top:1px solid rgba(255,255,255,0.08);
+    background:rgba(19,22,30,0.98);backdrop-filter:blur(8px);
+    padding:8px 6px;padding-bottom:calc(8px + env(safe-area-inset-bottom));
+    gap:2px;z-index:998
+  }
+  .sb{width:44px;height:44px}      /* alvo de toque maior */
+  .sb svg{width:20px;height:20px}
+  .sb-sep{display:none}
+
+  /* MAIN ocupa a tela; espaço extra no rodapé pra não ficar atrás da barra de abas */
+  .main{padding:18px 14px;padding-bottom:calc(78px + env(safe-area-inset-bottom));-webkit-overflow-scrolling:touch}
+
+  /* Cabeçalhos e cards */
+  .ph h1{font-size:18px}
+  .card-hd{flex-wrap:wrap;gap:10px}
+  .card-b{padding:16px}
+  .toolbar{padding:12px 14px}
+  .srch{max-width:none}
+
+  /* Stats em 2 colunas, mais compactos */
+  .stats{gap:10px;margin-bottom:18px}
+  .stat{padding:14px}
+  .stat-v{font-size:22px}
+
+  /* Formulários: tudo em 1 coluna */
+  .c2,.c3,.c4{grid-template-columns:1fr}
+  .ff{flex-wrap:wrap}
+  .ff .btn{flex:1;justify-content:center;min-width:120px}
+
+  /* Tabela: rolagem horizontal suave (já tem overflow-x) */
+  .tw{-webkit-overflow-scrolling:touch}
+
+  /* LOGIN responsivo */
+  .login-screen{padding:16px}
+  .login-box{width:100%;max-width:420px;border-radius:18px}
+  .login-top{padding:26px 22px 20px}
+  .login-body{padding:22px 20px 24px}
+  .role-card{padding:18px 6px 14px}
+
+  /* MODAIS não estouram a tela */
+  .modal{width:auto;max-width:calc(100vw - 36px)}
+
+  /* Filtro de período quebra melhor */
+  .period-bar{padding:12px}
+  .period-info{margin-left:0;width:100%}
+}
+
+/* Telas muito estreitas (≤360px): stats em 1 coluna */
+@media (max-width:360px){
+  .stats{grid-template-columns:1fr}
+  .perfil-chip span{display:none}  /* mostra só o ícone do perfil */
+}
 
 </style>
 <!-- Firebase SDK (compat — funciona sem module) -->
